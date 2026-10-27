@@ -451,11 +451,18 @@ class Login extends \Common {
      */
     private function getSystemLogo():? string {
 
-        if ($res = $this->config->system->logo) {
-            if (is_file($res)) return "<img src='{$res}' alt='logo'>";
+        $res = $this->config->system->logo;
+
+        if ( ! empty($res) && is_file($res)) {
+            return $res;
         }
-        $tpl       = new Templater3(Theme::get("logo"));
-        return $tpl->render();
+
+        $logo       = Theme::getModel()["logo"] ?? '';
+        $theme_path = 'core2/html/' . THEME;
+
+        return $logo && is_file(DOC_ROOT . "{$theme_path}/{$logo}")
+            ? "{$theme_path}/{$logo}"
+            : null;
     }
 
 

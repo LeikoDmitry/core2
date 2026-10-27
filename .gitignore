@@ -1,6 +1,7 @@
 html/*
 mod/*
 !mod/admin
+!mod/cities
 mod/admin/conf.d.ini
 mod/admin/conf.ext.ini
 /.svn

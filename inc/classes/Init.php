@@ -413,8 +413,9 @@ class Init extends Acl {
                 if (empty($_SERVER['HTTP_REFERER'])) {
                     throw new Exception('Referrer error');
                 }
-                $referer = parse_url($_SERVER['HTTP_REFERER']);
-                if (empty($referer['host']) || $referer['host'] !== $_SERVER['HTTP_HOST']) {
+                $referer      = parse_url($_SERVER['HTTP_REFERER']);
+                $referer_host = ($referer['host'] ?? '') . (isset($referer['port']) ? ":{$referer['port']}" : '');
+                if (empty($referer['host']) || $referer_host !== $_SERVER['HTTP_HOST']) {
                     http_response_code(400);
                     throw new Exception('Referrer error');
                 }

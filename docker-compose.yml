@@ -1,0 +1,71 @@
+services:
+  app:
+    build:
+      context: docker
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - .:/var/www/html/core2
+      - ./app/index.php:/var/www/html/index.php:ro
+      - ./app/conf.ini:/var/www/html/conf.ini:ro
+      - ./app/.htaccess:/var/www/html/.htaccess:ro
+      - ./mod/cities:/var/www/html/mod/cities:ro
+      - app-cache:/var/www/html/cache
+      - composer-cache:/root/.composer/cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ядро ходит в gearman по 127.0.0.1:4730 (core2/conf.ini) — делим сеть с app
+  gearmand:
+    image: artefactual/gearmand:1.1.21.4-alpine
+    network_mode: service:app
+    depends_on:
+      - app
+
+  # воркер Eventer ходит в redis по 127.0.0.1:6379
+  redis:
+    image: redis:7.4-alpine
+    network_mode: service:app
+    depends_on:
+      - app
+
+  worker:
+    build:
+      context: docker
+    command: ["php", "/var/www/html/core2/worker.php", "-c", "/var/www/html/conf.ini"]
+    network_mode: service:app
+    volumes:
+      - .:/var/www/html/core2
+      - ./app/conf.ini:/var/www/html/conf.ini:ro
+      - ./mod/cities:/var/www/html/mod/cities:ro
+      - app-cache:/var/www/html/cache
+    depends_on:
+      - app
+      - gearmand
+      - redis
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: core2
+      MYSQL_USER: core2
+      MYSQL_PASSWORD: core2
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/mysql/02-admin.sql:/docker-entrypoint-initdb.d/02-admin.sql:ro
+      - ./mod/cities/v1.0.0/install/install.sql:/docker-entrypoint-initdb.d/03-cities.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db-data:
+  app-cache:
+  composer-cache:
