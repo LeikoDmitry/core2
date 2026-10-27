@@ -45,6 +45,23 @@ Installation
   database.params.password  = <user password>
  ```
 
+Docker
+------
+Run the project locally with Docker Compose:
+ ```bash
+  docker compose up -d --build
+ ```
+
+* App: http://localhost:8080 (login `admin`, password `admin`)
+* MySQL: `localhost:3306`, database `core2`, user `core2`, password `core2`
+* Ports can be changed with `APP_PORT` and `DB_PORT` env variables
+
+On the first start the container runs `composer install`, the database is created from [db.sql](db.sql) and the *admin* user is added.
+Files for the app (*index.php*, *conf.ini*, *.htaccess*) are in the [app](app) folder, the source code is mounted into the container as *core2* folder.
+The UI theme is not part of the repository — put it into *html/default* folder before opening the app.
+
+To stop the containers use `docker compose down`, add `-v` to remove the database data.
+
 Usage
 -----
 Open URL of new index.php file in your browser. Use 'admin' username and 'admin' password.
